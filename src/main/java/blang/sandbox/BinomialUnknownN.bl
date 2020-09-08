@@ -1,0 +1,12 @@
+package blang.validation.internals.fixtures
+
+model BinomialUnknownN {
+  random IntVar y ?: 3
+  random RealVar p ?: latentReal()
+  random IntVar n ?: latentInt()
+  laws {
+  	p ~ Beta(1,1)
+  	n ~ Poisson(5)
+    y | n, p ~ Binomial(n, p)
+  }
+}
