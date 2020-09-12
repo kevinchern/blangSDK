@@ -1,0 +1,35 @@
+package blang.sandbox
+
+model MultivariateGMM {
+    
+  param GlobalDataSource data
+
+  param Integer K ?: 3
+
+  param Plate<String> N
+  param Plate<Integer> components 
+
+  random Simplex pi ?: latentSimplex(K)
+  random Plated<IntVar> z
+  random Plated<RealVar> x
+  random Plated<RealVar> y
+  random Plated<RealVar> mu
+
+  laws {
+    pi | K ~ SymmetricDirichlet(K, 1.0)
+    
+    for (Index<Integer> k : components.indices){
+      mu.get(k) ~ Normal(0, 10)
+    }
+      
+    for (Index<String> i : N.indices) {
+      z.get(i) | pi ~ Categorical(pi)
+
+      y.get(i) | IntVar zi = z.get(i), mu, components
+        ~ Normal(mu.get(components.index(zi)), 10)
+
+      x.get(i) | IntVar zi = z.get(i), mu, components
+        ~ Normal(mu.get(components.index(zi)), 10)
+    }
+  }
+}

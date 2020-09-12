@@ -1,0 +1,32 @@
+package jss.gmm
+
+model MixtureModel {
+
+  random List<RealVar> y
+  param  Integer       n  ?: y.size
+  param  Matrix        a  ?: fixedVector (1.0 , 1.0)
+  random List<IntVar>  z  ?: latentIntList(n)
+
+  param  Integer       K  ?: 2
+  random Simplex       pi ?: latentSimplex(K)
+  random List<RealVar> mu ?: latentRealList(K)
+  random List<RealVar> sd ?: latentRealList(K)
+
+  laws {
+
+    pi | a ~ Dirichlet ( a )
+
+    for (int k : 0 ..< K) {
+      mu. get (k) ~ Normal(0.0, 100.0)
+      sd. get (k) ~ ContinuousUniform(0.0 ,10.0)
+    }
+
+    for ( int i : 0 ..< n) {
+      z.get(i) | pi ~ Categorical(pi)
+      y.get(i) | mu, sd, IntVar k = z.get(i)
+        ~ Normal(mu.get(k) , pow(sd.get(k), 2.0))
+    }
+
+  }
+
+}

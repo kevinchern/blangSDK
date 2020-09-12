@@ -1,0 +1,40 @@
+package blang.sandbox.garys
+import static org.eclipse.xtext.xbase.lib.ArrayLiterals.newDoubleArrayOfSize
+import static extension xlinear.MatrixExtensions.*
+
+model GarysModel {
+
+  param Double a ?: 5.0
+  param Double b ?: 5.0
+  param Double sigma_0 ?: 1.0
+  param Double sigma_1 ?: 1.0
+  param DenseMatrix x
+
+  random DenseMatrix y 
+  random DenseMatrix w ?: latentMatrix(x.nCols(), 1)
+  random List<IntVar> z ?: latentIntList(x.nCols())
+  random DenseMatrix psi ?: latentMatrix(x.nCols(), 1)
+
+  laws {
+      w.get(0) | a, b ~ Beta(a, b)
+      for (int i : 1 ..< x.nCols()) {
+        w.get(i) | RealVar w_prev = w.get(i-1), a, b ~ Beta(a * w_prev, b * (1 - w_prev))
+      }
+      for (int i : 0 ..< x.nCols()) {
+        z.get(i) | RealVar wi = w.get(i) ~ Bernoulli(wi)
+      }
+      for (int i : 0 ..< x.nCols()) {
+        psi.get(i) | sigma_0 ~ Normal(0, sigma_0)
+      }
+      for (int i : 0 ..< x.nRows()) {
+        y.get(i) | Matrix xi = x.row(i), sigma_1, z, psi ~ Normal(dot((xi.transpose() * fixedVector({
+          val result = newDoubleArrayOfSize(z.size)
+          for (int t : 0 ..< z.size)
+            result.set(t, z.get(t).intValue as double)
+          result}).transpose()), psi.transpose()), sigma_1)
+      }
+//      for (int i : 0 ..< x.nRows()) {
+//        y.get(i) | Matrix xi = x.row(i), sigma_1, z, psi ~ Normal(dot(xi.transpose, psi), sigma_1)
+//      }
+  }
+}
