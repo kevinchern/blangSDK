@@ -1,0 +1,19 @@
+package blang.sandbox.gc
+
+model GaussianChain { 
+
+    random RealVar x ?: 0.5
+    param Integer m ?: 3
+    random List<RealVar> mu ?: latentRealList(m)
+    
+
+    laws {
+        x | RealVar m = mu.get(0) ~ Normal(m, 1)
+        for (int i : 0 ..< (mu.size-1)){
+            mu.get(i) | RealVar m = mu.get(i+1)~ Normal(m, 1)
+        }
+        mu.get(m-1) ~ Normal(0, 1)
+    }
+    
+    
+}
