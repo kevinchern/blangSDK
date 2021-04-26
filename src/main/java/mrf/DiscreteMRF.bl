@@ -1,0 +1,36 @@
+package mrf
+import briefj.collections.UnorderedPair
+import mrf.MRFInteractor
+import mrf.MRFUtils
+import mrf.hotpotts.HPSingle
+
+model DiscreteMRF {
+  /*
+   * IMPORTANT: 
+   * laws block: logf are unnormalized
+   * generate block:  an inexact, Gibbs sampler is used to generate data
+   */
+  
+  param String edgeListFilePath
+  param Integer numGibbsIterations ?: 5
+  param Integer numClasses ?: 3
+  param List<UnorderedPair<Integer, Integer>> edgeList ?: MRFUtils.parseEdgeListToEdgeList(edgeListFilePath)
+  param Map<Integer, List<Integer>> neighbourList ?: MRFUtils.parseEdgeListToNeighboursList(edgeListFilePath)
+  param MRFInteractor interactor ?: new HPSingle(numClasses)
+  random List<IntVar> classes ?: latentIntList(neighbourList.size())
+  
+  laws {
+
+    for (UnorderedPair<Integer, Integer> edge : edgeList) {
+      | interactor, IntVar u = edge.getFirst(), IntVar v = edge.getSecond
+        ~ LogPotential(interactor.logEdgePotential(u, v))
+    }
+
+  }
+  
+  generate(rand) {
+      Generators::GibbsDiscreteMRFInPlace(rand, classes, interactor, edgeList, neighbourList, numGibbsIterations)
+  }
+
+
+}

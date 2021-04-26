@@ -14,9 +14,12 @@ import org.apache.commons.math3.distribution.PoissonDistribution;
 import org.apache.commons.math3.distribution.TDistribution;
 
 import bayonet.math.NumericalUtils;
+import blang.core.IntVar;
 import blang.types.DenseSimplex;
+import blang.types.StaticUtils;
 import blang.types.internals.Delegator;
 import briefj.collections.UnorderedPair;
+import mrf.MRFInteractor;
 import xlinear.CholeskyDecomposition;
 import xlinear.DenseMatrix;
 import xlinear.Matrix;
@@ -24,11 +27,61 @@ import xlinear.MatrixOperations;
 
 import static blang.types.ExtensionUtils.generator;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 /** Various random number generators. */
 public class Generators // Warning: blang.distributions.Generators hard-coded in ca.ubc.stat.blang.scoping.BlangImplicitlyImportedFeatures 
 {
+  
+    /** */
+    private static void GibbsDiscreteMRFInPlaceVertex
+    (Random random, List<IntVar> classes, MRFInteractor interactor, List<UnorderedPair<Integer, Integer>> edgeList, Map<Integer, List<Integer>> neighbourList, int node)
+    {
+      // Accumulate normalization constant and populate in discreteDistribution
+      double logSum = Double.NEGATIVE_INFINITY;
+      double[] discreteDistribution = new double[interactor.getNumClasses()];
+      for (int nodeClass = 0; nodeClass < interactor.getNumClasses(); nodeClass++) {
+        List<Integer> neighboursOfNode = neighbourList.get(node);
+        discreteDistribution[nodeClass] = interactor.logNodeClassPotential(StaticUtils.fixedInt(nodeClass), neighboursOfNode, classes);
+        logSum = NumericalUtils.logAdd(logSum, discreteDistribution[nodeClass]);
+      }
+
+      // Normalize distribution
+      for (int nodeClass = 0; nodeClass < interactor.getNumClasses(); nodeClass++) {
+        discreteDistribution[nodeClass] -= logSum;
+        discreteDistribution[nodeClass] = Math.exp(discreteDistribution[nodeClass]);
+      }
+      
+
+      classes.set(node, StaticUtils.fixedInt(categorical(random, discreteDistribution)));
+    }
+  
+    /** */
+    public static List<IntVar> GibbsDiscreteMRF
+    (Random random, MRFInteractor interactor, List<UnorderedPair<Integer, Integer>> edgeList, Map<Integer, List<Integer>> neighbourList, int numGibbsIterations) {
+      // Initialize to, for example when numClasses = 3, [0, 1, 2, 0, 1, 2, ..., 0, 1, 2]
+      List<IntVar> classes = StaticUtils.latentIntList(neighbourList.size());
+      GibbsDiscreteMRFInPlace(random, classes, interactor, edgeList, neighbourList, numGibbsIterations);
+      return classes;
+    
+    }
+    /** */
+    public static void GibbsDiscreteMRFInPlace
+    (Random random, List<IntVar> classes, MRFInteractor interactor, List<UnorderedPair<Integer, Integer>> edgeList, Map<Integer, List<Integer>> neighbourList, int numGibbsIterations) {
+      // Initialize to, for example when numClasses = 3, [0, 1, 2, 0, 1, 2, ..., 0, 1, 2]
+      for (int entry = 0; entry < classes.size(); entry++) {
+        classes.set(entry, StaticUtils.fixedInt(entry % interactor.getNumClasses()));
+      }
+      
+      for (int iteration = 0; iteration < numGibbsIterations; iteration++) {
+        for (int vertex = 0; vertex < classes.size(); vertex++) {
+          GibbsDiscreteMRFInPlaceVertex(random, classes, interactor, edgeList, neighbourList, vertex);
+        }
+      }
+    
+    }
     /** */
     public static int betaBinomial(Random random, double alpha, double beta, int numberOfTrials)
     {
