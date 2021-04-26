@@ -7,8 +7,9 @@ import mrf.hotpotts.HPSingle
 model DiscreteMRF {
   /*
    * IMPORTANT: 
-   * laws block: logf are unnormalized
-   * generate block:  an inexact, Gibbs sampler is used to generate data
+   *   laws block:      logf are unnormalized
+   *   generate block:  an inexact, Gibbs sampler is used to generate data
+   *   Data:            vertices of graph must be consecutive integers from 0 to n-1
    */
   
   param String edgeListFilePath
@@ -16,13 +17,13 @@ model DiscreteMRF {
   param Integer numClasses ?: 3
   param List<UnorderedPair<Integer, Integer>> edgeList ?: MRFUtils.parseEdgeListToEdgeList(edgeListFilePath)
   param Map<Integer, List<Integer>> neighbourList ?: MRFUtils.parseEdgeListToNeighboursList(edgeListFilePath)
-  param MRFInteractor interactor ?: new HPSingle(numClasses)
-  random List<IntVar> classes ?: latentIntList(neighbourList.size())
+  random MRFInteractor interactor ?: new HPSingle(numClasses)
+  random List<IntVar> classes 
   
   laws {
 
     for (UnorderedPair<Integer, Integer> edge : edgeList) {
-      | interactor, IntVar u = edge.getFirst(), IntVar v = edge.getSecond
+      | interactor, IntVar u = classes.get(edge.getFirst()), IntVar v = classes.get(edge.getSecond)
         ~ LogPotential(interactor.logEdgePotential(u, v))
     }
 

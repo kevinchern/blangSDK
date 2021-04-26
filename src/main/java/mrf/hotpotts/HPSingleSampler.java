@@ -9,6 +9,7 @@ import blang.core.LogScaleFactor;
 import blang.distributions.Generators;
 import blang.mcmc.Sampler;
 import briefj.collections.UnorderedPair;
+import mrf.MRFUtils;
 import blang.mcmc.ConnectedFactor;
 import blang.mcmc.SampledVariable;
 
@@ -17,8 +18,8 @@ public class HPSingleSampler implements Sampler {
   @ConnectedFactor List<LogScaleFactor> numericFactors;
   // TODO: Constructor to set number of DMH iterations
   int numGibbsIterations;
-  List<UnorderedPair<Integer, Integer>> edgeList;
-  Map<Integer, List<Integer>> neighbourList;
+  List<UnorderedPair<Integer, Integer>> edgeList = MRFUtils.parseEdgeListToEdgeList("data/edges.csv");
+  Map<Integer, List<Integer>> neighbourList = MRFUtils.parseEdgeListToNeighboursList("data/edges.csv");
 
   @Override
   /**
@@ -42,9 +43,10 @@ public class HPSingleSampler implements Sampler {
     hpSingle.setBeta(currentBeta);
     double currentAuxLogPotential = hpSingle.logPotential(edgeList, auxiliaryClasses);
     
-    double logRatio = Math.min(0, proposedLogDensity - currentLogDensity + currentAuxLogPotential - proposedAuxLogPotential);
+    double logRatio =  proposedLogDensity - currentLogDensity + currentAuxLogPotential - proposedAuxLogPotential;
+    double logAlpha = Math.min(0, logRatio);
     double logU = Math.log(rand.nextDouble());
-    if (logU <= logRatio) {
+    if (logU <= logAlpha) {
       hpSingle.setBeta(proposedBeta);
     }
 
