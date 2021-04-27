@@ -9,6 +9,7 @@ import blang.core.LogScaleFactor;
 import blang.distributions.Generators;
 import blang.mcmc.Sampler;
 import briefj.collections.UnorderedPair;
+import mrf.MRFGraph;
 import mrf.MRFUtils;
 import blang.mcmc.ConnectedFactor;
 import blang.mcmc.SampledVariable;
@@ -17,9 +18,9 @@ public class HPSingleSampler implements Sampler {
   @SampledVariable HPSingle hpSingle;
   @ConnectedFactor List<LogScaleFactor> numericFactors;
   // TODO: Constructor to set number of DMH iterations
-  int numGibbsIterations;
-  List<UnorderedPair<Integer, Integer>> edgeList = MRFUtils.parseEdgeListToEdgeList("data/edges.csv");
-  Map<Integer, List<Integer>> neighbourList = MRFUtils.parseEdgeListToNeighboursList("data/edges.csv");
+  int numGibbsIterations = 100;
+  List<UnorderedPair<Integer, Integer>> edgeList = MRFGraph.instance.edgeList;
+  Map<Integer, List<Integer>> neighbourList = MRFGraph.instance.neighbourList;
 
   @Override
   /**

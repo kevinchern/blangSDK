@@ -1,7 +1,6 @@
 package mrf
 import briefj.collections.UnorderedPair
 import mrf.MRFInteractor
-import mrf.MRFUtils
 import mrf.hotpotts.HPSingle
 
 model DiscreteMRF {
@@ -12,17 +11,15 @@ model DiscreteMRF {
    *   Data:            vertices of graph must be consecutive integers from 0 to n-1
    */
   
-  param String edgeListFilePath
+  param MRFGraph graph 
   param Integer numGibbsIterations ?: 5
   param Integer numClasses ?: 3
-  param List<UnorderedPair<Integer, Integer>> edgeList ?: MRFUtils.parseEdgeListToEdgeList(edgeListFilePath)
-  param Map<Integer, List<Integer>> neighbourList ?: MRFUtils.parseEdgeListToNeighboursList(edgeListFilePath)
   random MRFInteractor interactor ?: new HPSingle(numClasses)
   random List<IntVar> classes 
   
   laws {
 
-    for (UnorderedPair<Integer, Integer> edge : edgeList) {
+    for (UnorderedPair<Integer, Integer> edge : MRFGraph.instance.edgeList) {
       | interactor, IntVar u = classes.get(edge.getFirst()), IntVar v = classes.get(edge.getSecond)
         ~ LogPotential(interactor.logEdgePotential(u, v))
     }
@@ -30,7 +27,11 @@ model DiscreteMRF {
   }
   
   generate(rand) {
-      Generators::GibbsDiscreteMRFInPlace(rand, classes, interactor, edgeList, neighbourList, numGibbsIterations)
+      Generators::GibbsDiscreteMRFInPlace(
+          rand, classes, interactor,
+          MRFGraph.instance.edgeList, MRFGraph.instance.neighbourList,
+          numGibbsIterations
+      )
   }
 
 
