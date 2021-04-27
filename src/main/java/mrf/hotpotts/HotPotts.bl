@@ -1,9 +1,10 @@
-package mrf
+package mrf.hotpotts
+
 import briefj.collections.UnorderedPair
 import mrf.MRFInteractor
-import mrf.hotpotts.HPSingle
+import mrf.MRFGraph
 
-model DiscreteMRF {
+model HotPotts {
   /*
    * IMPORTANT: 
    *   laws block:      logf are unnormalized
