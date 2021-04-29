@@ -1,4 +1,4 @@
-package mrf.hotpotts;
+package blang.mrf.hotpotts;
 
 import java.util.List;
 import java.util.Map;
@@ -8,9 +8,9 @@ import blang.core.IntVar;
 import blang.core.LogScaleFactor;
 import blang.distributions.Generators;
 import blang.mcmc.Sampler;
+import blang.mrf.MRFUtils;
 import briefj.collections.UnorderedPair;
-import mrf.MRFGraph;
-import mrf.MRFUtils;
+import blang.mrf.MRFGraph;
 import blang.mcmc.ConnectedFactor;
 import blang.mcmc.SampledVariable;
 
@@ -19,8 +19,8 @@ public class HPSingleSampler implements Sampler {
   @ConnectedFactor List<LogScaleFactor> numericFactors;
   // TODO: Constructor to set number of DMH iterations
   int numGibbsIterations = 100;
-  List<UnorderedPair<Integer, Integer>> edgeList = MRFGraph.instance.edgeList;
-  Map<Integer, List<Integer>> neighbourList = MRFGraph.instance.neighbourList;
+  List<UnorderedPair<String, String>> edgeList = HPSamplerOptions.instance.g.edgeList;
+  Map<String, List<String>> neighbourList = HPSamplerOptions.instance.g.neighboursMap;
 
   @Override
   /**

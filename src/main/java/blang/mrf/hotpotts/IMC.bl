@@ -1,0 +1,78 @@
+package mrf.hotpotts
+
+import briefj.collections.UnorderedPair
+import mrf.MRFInteractor
+import mrf.MRFGraph
+
+model IMC {
+  /*
+   * IMPORTANT: 
+   *   laws block:      logf are unnormalized
+   *   generate block:  an inexact, Gibbs sampler is used to generate data
+   *   Data:            vertices of graph must be consecutive integers from 0 to n-1
+   */
+  
+  param Plate<String> patient
+  param Plate<Integer> N
+  param Plate<String> R
+  param Plate<Integer> C
+  param Plate<Integer> K
+
+  param Integer nGibbsIter ?: 5
+  param Plated<MRFGraph> graph 
+
+  random Plated<RealVar> mu
+  random Plated<RealVar> sigma
+  random Plated<IntVar> Z
+  random Plated<IntVar> X
+  random Plated<RealVar> Y
+  random Plated<MRFInteractor> beta 
+
+
+
+  laws {
+    
+    // Y.get(p, n, r)
+    for (Index<String> p : patient.indices()) {
+        for (Index<String> r : R.indices) {
+            for (Index<Integer> n : N.indices) {
+                Y.get(p, n, r) | IntVar z = X.get(p, n), mu, sigma, K  ~ Normal(mu.get(K.index(z)), pow(sigma.get(K.index(z)), 2))
+            }
+        }
+    }
+
+    // X.get(p, n)
+    // Just need all edge potentials
+    for (Index<String> p : patient.indices()) {
+        for (UnorderedPair<Integer, Integer> edge : graph.get(p).instance.edgeList) {
+          | IntVar z = Z.get(p),
+            beta, C,
+            IntVar u = X.get(p, N.index(edge.getFirst())),
+            IntVar v = X.get(p, N.index(edge.getSecond()))
+            ~ LogPotential(beta.get(C.index(z)).logEdgePotential(u, v))
+        }
+    }
+    
+    // Theta priors
+    for (Index<Integer> k : K.indices) {
+        for (Index<String> r : R.indices) {
+            mu.get(k, r) ~ Normal(0, 100)
+            sigma.get(k, r) ~ Gamma(1, 0.1)
+        }
+    }
+    
+    // Beta priors
+    // Z priors
+     
+  }
+  
+  generate(rand) {
+      Generators::GibbsDiscreteMRFInPlace(
+          rand, X, beta,
+          MRFGraph.instance.edgeList, MRFGraph.instance.neighbourList,
+          nGibbsIter
+      )
+  }
+
+
+}

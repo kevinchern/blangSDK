@@ -1,4 +1,4 @@
-package mrf.hotpotts;
+package blang.mrf.hotpotts;
 
 import java.util.List;
 
@@ -7,12 +7,14 @@ import blang.core.RealVar;
 import blang.inits.experiments.tabwriters.TidilySerializable;
 import blang.inits.experiments.tabwriters.TidySerializer.Context;
 import blang.mcmc.Samplers;
-import mrf.MRFInteractor;
-import mrf.hotpotts.HPSingleSampler;
+import blang.types.Plate;
+import blang.types.Plated;
+import blang.mrf.MRFInteractor;
+import blang.mrf.hotpotts.HPSingleSampler;
 
 import briefj.collections.UnorderedPair;
 
-@Samplers(HPSingleSampler.class)
+//@Samplers(HPSingleSampler.class)
 public class HPSingle implements MRFInteractor, RealVar, TidilySerializable {
   
   private double beta = 0.5;
@@ -45,17 +47,6 @@ public class HPSingle implements MRFInteractor, RealVar, TidilySerializable {
 
 
   @Override
-  public double logNodeClassPotential
-  (IntVar nodeClass, List<Integer> neighbours, List<IntVar> classes) {
-    double logp = 0;
-    for (Integer neighbour : neighbours) {
-      logp += logEdgePotential(nodeClass, classes.get(neighbour));
-    }
-    return logp;
-  }
-
-
-  @Override
   public double logEdgePotential(IntVar u, IntVar v) {
     if (u.intValue() >= numClasses || v.intValue() >= numClasses) {
       return Double.NEGATIVE_INFINITY;
@@ -84,6 +75,15 @@ public class HPSingle implements MRFInteractor, RealVar, TidilySerializable {
   @Override
   public void serialize(Context context) {
     context.recurse(beta, "beta", 0);    
+  }
+
+  @Override
+  public double logNodeClassPotential(IntVar nodeClass, List<String> neighbours, Plated<IntVar> classes, Plate<String> N) {
+    double logp = 0;
+    for (String neighbour : neighbours) {
+      logp += logEdgePotential(nodeClass, classes.get(N.index(neighbour)));
+    }
+    return logp;
   }
 
 

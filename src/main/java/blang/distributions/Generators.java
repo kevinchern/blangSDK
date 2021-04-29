@@ -15,11 +15,16 @@ import org.apache.commons.math3.distribution.TDistribution;
 
 import bayonet.math.NumericalUtils;
 import blang.core.IntVar;
+import blang.core.WritableIntVar;
+import blang.mrf.MRFInteractor;
 import blang.types.DenseSimplex;
+import blang.types.Index;
+import blang.types.Plate;
+import blang.types.Plated;
 import blang.types.StaticUtils;
 import blang.types.internals.Delegator;
 import briefj.collections.UnorderedPair;
-import mrf.MRFInteractor;
+import blang.mrf.MRFGraph;
 import xlinear.CholeskyDecomposition;
 import xlinear.DenseMatrix;
 import xlinear.Matrix;
@@ -28,7 +33,6 @@ import xlinear.MatrixOperations;
 import static blang.types.ExtensionUtils.generator;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 /** Various random number generators. */
@@ -37,14 +41,14 @@ public class Generators // Warning: blang.distributions.Generators hard-coded in
   
     /** */
     private static void GibbsDiscreteMRFInPlaceVertex
-    (Random random, List<IntVar> classes, MRFInteractor interactor, List<UnorderedPair<Integer, Integer>> edgeList, Map<Integer, List<Integer>> neighbourList, int node)
+    (Random random, Plated<IntVar> classes, Plate<String> N, MRFInteractor interactor, MRFGraph graph, Index<String> node)
     {
       // Accumulate normalization constant and populate in discreteDistribution
       double logSum = Double.NEGATIVE_INFINITY;
       double[] discreteDistribution = new double[interactor.getNumClasses()];
       for (int nodeClass = 0; nodeClass < interactor.getNumClasses(); nodeClass++) {
-        List<Integer> neighboursOfNode = neighbourList.get(node);
-        discreteDistribution[nodeClass] = interactor.logNodeClassPotential(StaticUtils.fixedInt(nodeClass), neighboursOfNode, classes);
+        List<String> neighboursOfNode = graph.neighboursMap.get(node.getKey());
+        discreteDistribution[nodeClass] = interactor.logNodeClassPotential(StaticUtils.fixedInt(nodeClass), neighboursOfNode, classes, N);
         logSum = NumericalUtils.logAdd(logSum, discreteDistribution[nodeClass]);
       }
 
@@ -55,29 +59,37 @@ public class Generators // Warning: blang.distributions.Generators hard-coded in
       }
       
 
-      classes.set(node, StaticUtils.fixedInt(categorical(random, discreteDistribution)));
+      ((WritableIntVar) classes.get(node)).set(categorical(random, discreteDistribution));
     }
   
-    /** */
-    public static List<IntVar> GibbsDiscreteMRF
-    (Random random, MRFInteractor interactor, List<UnorderedPair<Integer, Integer>> edgeList, Map<Integer, List<Integer>> neighbourList, int numGibbsIterations) {
-      // Initialize to, for example when numClasses = 3, [0, 1, 2, 0, 1, 2, ..., 0, 1, 2]
-      List<IntVar> classes = StaticUtils.latentIntList(neighbourList.size());
-      GibbsDiscreteMRFInPlace(random, classes, interactor, edgeList, neighbourList, numGibbsIterations);
-      return classes;
-    
-    }
+//    /** */
+//    public static Plated<IntVar> GibbsDiscreteMRF
+//    (Random random, MRFInteractor interactor,
+//     List<UnorderedPair<String, String>> edgeList,
+//     Map<String, List<String>> neighbourList,
+//     Plate<String> N,
+//     int numGibbsIterations) {
+//      Plated<IntVar> classes = StaticUtils.latentIntList(neighbourList.size());
+//      GibbsDiscreteMRFInPlace(random, classes, interactor, edgeList, neighbourList, numGibbsIterations);
+//      return classes;
+//    
+//    }
     /** */
     public static void GibbsDiscreteMRFInPlace
-    (Random random, List<IntVar> classes, MRFInteractor interactor, List<UnorderedPair<Integer, Integer>> edgeList, Map<Integer, List<Integer>> neighbourList, int numGibbsIterations) {
+    (Random random, Plated<IntVar> classes, Plate<String> N, MRFInteractor interactor, MRFGraph graph, int numGibbsIterations) {
       // Initialize to, for example when numClasses = 3, [0, 1, 2, 0, 1, 2, ..., 0, 1, 2]
-      for (int entry = 0; entry < classes.size(); entry++) {
-        classes.set(entry, StaticUtils.fixedInt(entry % interactor.getNumClasses()));
+      int entry = 0;
+      for (Index<String> node : N.indices()) {
+        IntVar var = classes.get(node);
+        System.out.println(var.getClass());
+        WritableIntVar writable = (WritableIntVar) var;
+        writable.set(entry % interactor.getNumClasses());
+        entry++;
       }
       
       for (int iteration = 0; iteration < numGibbsIterations; iteration++) {
-        for (int vertex = 0; vertex < classes.size(); vertex++) {
-          GibbsDiscreteMRFInPlaceVertex(random, classes, interactor, edgeList, neighbourList, vertex);
+        for (Index<String> node : N.indices()) {
+          GibbsDiscreteMRFInPlaceVertex(random, classes, N, interactor, graph, node);
         }
       }
     

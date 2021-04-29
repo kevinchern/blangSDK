@@ -1,10 +1,11 @@
-package mrf;
+package blang.mrf;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import blang.core.IntVar;
 import blang.inits.providers.CoreProviders;
@@ -39,12 +40,12 @@ public class MRFUtils {
     return result;
   }
   
-  public static List<UnorderedPair<Integer, Integer>> parseEdgeListToEdgeList(String filepath) {
-    List<UnorderedPair<Integer, Integer>> result = new ArrayList<UnorderedPair<Integer, Integer>>();
+  public static List<UnorderedPair<String, String>> parseEdgeListToEdgeList(String filepath) {
+    List<UnorderedPair<String, String>> result = new ArrayList<UnorderedPair<String, String>>();
     for (List<String> line : BriefIO.readLines(filepath).splitCSV()) {
-      Integer nodeA = CoreProviders.parse_int(line.get(0));
-      Integer nodeB = CoreProviders.parse_int(line.get(1));
-      result.add(new UnorderedPair<Integer, Integer>(nodeA, nodeB));
+      String nodeA = line.get(0);
+      String nodeB = line.get(1);
+      result.add(new UnorderedPair<String, String>(nodeA, nodeB));
     }
     return result;
   }
@@ -79,6 +80,31 @@ public class MRFUtils {
       j = temp;
     }
     return (int)(numClasses * i - (i - 1) * i / 2 + j - i);
+  }
+
+  public static Map<String, List<String>> parseEdgeListToNeighboursMap(String filepath) {
+
+    HashSet<String> vertices = new HashSet<String>();
+    for (List<String> line : BriefIO.readLines(filepath).splitCSV()) {
+      String nodeA = line.get(0);
+      String nodeB = line.get(1);
+      vertices.add(nodeA);
+      vertices.add(nodeB);
+    }
+
+    HashMap<String, List<String>> result = new HashMap<String, List<String>>();
+    for (String vertex : vertices) {
+      result.put(vertex, new ArrayList<String>());
+    }
+
+    for (List<String> line : BriefIO.readLines(filepath).splitCSV()) {
+      String nodeA = line.get(0);
+      String nodeB = line.get(1);
+      result.get(nodeA).add(nodeB);
+      result.get(nodeB).add(nodeA);
+    }
+
+    return result;
   }
   
 }

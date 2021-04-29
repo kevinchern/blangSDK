@@ -1,12 +1,12 @@
-package mrf;
+package blang.mrf;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
 import blang.distributions.Generators;
+import blang.mrf.hotpotts.HPSingle;
 import briefj.collections.UnorderedPair;
-import mrf.hotpotts.HPSingle;
 
 public class sandbox {
   public static void main(String[] args) {

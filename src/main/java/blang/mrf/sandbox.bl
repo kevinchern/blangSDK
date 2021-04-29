@@ -1,0 +1,12 @@
+package mrf
+
+model Sandbox {   
+  random RealVar mu ?: latentReal()
+  random RealVar sigma ?: latentReal()
+  random RealVar y ?: 1
+  laws {
+    mu ~ Normal(0, 1)
+    sigma ~ ContinuousUniform(1, 5)
+    y | mu, sigma ~ Normal(mu, sigma)
+  }
+}
