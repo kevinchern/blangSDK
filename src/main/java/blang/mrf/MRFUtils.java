@@ -106,5 +106,37 @@ public class MRFUtils {
 
     return result;
   }
+
+  public static List<UnorderedPair<String, String>> parseLineToEdgeList(String line) {
+    List<UnorderedPair<String, String>> result = new ArrayList<UnorderedPair<String, String>>();
+    for (String edge : line.split(";")) {
+      String[] nodes = edge.trim().split(",");
+      result.add(new UnorderedPair<String, String>(nodes[0].trim(), nodes[1].trim()));
+    }
+    return result;
+  }
+
+  public static Map<String, List<String>> parseLineToNeighboursMap(String line) {
+    // TODO Auto-generated method stub
+    HashSet<String> vertices = new HashSet<String>();
+    for (String edge : line.split(";")) {
+      String[] nodes = edge.trim().split(",");
+      vertices.add(nodes[0].trim());
+      vertices.add(nodes[1].trim());
+    }
+
+    HashMap<String, List<String>> result = new HashMap<String, List<String>>();
+    for (String vertex : vertices) {
+      result.put(vertex, new ArrayList<String>());
+    }
+
+    for (String edge : line.split(";")) {
+      String[] nodes = edge.trim().split(",");
+      result.get(nodes[0].trim()).add(nodes[1].trim());
+      result.get(nodes[1].trim()).add(nodes[0].trim());
+    }
+
+    return result;
+  }
   
 }

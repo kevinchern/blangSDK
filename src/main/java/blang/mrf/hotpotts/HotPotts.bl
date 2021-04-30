@@ -10,33 +10,25 @@ model HotPotts {
    *   laws block:      logf are unnormalized (does not include Z(beta))
    *   generate block:  an inexact, Gibbs sampler is used to generate data
    */
-  param GlobalDataSource data
-  param HPSamplerOptions samplerOptions
-  param Integer numGibbsIterations ?: 5
-
-
+//  param GlobalDataSource data
+//  param HPSamplerOptions samplerOptions
+  param Integer numGibbsIterations ?: 2000
   param Plate<String> N
-
-  param Integer numClasses ?: 3
+  param Integer numClasses
   param MRFGraph graph
-  param MRFInteractor beta ?: new HPSingle(numClasses)
-  random Plated<IntVar> X
+  param MRFInteractor beta
+  random Plated<IntVar> realization
 
 
   laws {
       for (UnorderedPair<String, String> edge : graph.edgeList) {
-          | beta, IntVar u = X.get(N.index(edge.getFirst())), IntVar v = X.get(N.index(edge.getSecond()))
+          | beta, IntVar u = realization.get(N.index(edge.getFirst())), IntVar v = realization.get(N.index(edge.getSecond()))
             ~ LogPotential(beta.logEdgePotential(u, v))
       }
   }
   
   generate(rand) {
-    Generators::GibbsDiscreteMRFInPlace(rand, X, N, beta, graph, numGibbsIterations)
-//    for (int iter : 0 ..< numGibbsIterations) {
-//        for (Index<String> index : N.indices) {
-//            (X.get(index) as WritableIntVar).set(12)
-//        }
-//    }
+    Generators::GibbsDiscreteMRFInPlace(rand, realization, N, beta, graph, numGibbsIterations)
   }
 
 

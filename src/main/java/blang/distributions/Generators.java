@@ -23,6 +23,7 @@ import blang.types.Plate;
 import blang.types.Plated;
 import blang.types.StaticUtils;
 import blang.types.internals.Delegator;
+import blang.types.internals.Query;
 import briefj.collections.UnorderedPair;
 import blang.mrf.MRFGraph;
 import xlinear.CholeskyDecomposition;
@@ -32,7 +33,9 @@ import xlinear.MatrixOperations;
 
 import static blang.types.ExtensionUtils.generator;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
 
 /** Various random number generators. */
@@ -78,18 +81,19 @@ public class Generators // Warning: blang.distributions.Generators hard-coded in
     public static void GibbsDiscreteMRFInPlace
     (Random random, Plated<IntVar> classes, Plate<String> N, MRFInteractor interactor, MRFGraph graph, int numGibbsIterations) {
       // Initialize to, for example when numClasses = 3, [0, 1, 2, 0, 1, 2, ..., 0, 1, 2]
-      int entry = 0;
-      for (Index<String> node : N.indices()) {
-        IntVar var = classes.get(node);
-        System.out.println(var.getClass());
+      int counter = 0;
+
+      for (Entry<Query, IntVar> entry : classes.entries()) {
+        IntVar var = entry.getValue();
         WritableIntVar writable = (WritableIntVar) var;
-        writable.set(entry % interactor.getNumClasses());
-        entry++;
+        writable.set(counter % interactor.getNumClasses());
+        counter++;
       }
       
       for (int iteration = 0; iteration < numGibbsIterations; iteration++) {
-        for (Index<String> node : N.indices()) {
-          GibbsDiscreteMRFInPlaceVertex(random, classes, N, interactor, graph, node);
+        for (Entry<Query, IntVar> nodeEntry : classes.entries()) {
+          // TODO: 2021-04-30 -> this function below needs access to node in graph via index.
+//          GibbsDiscreteMRFInPlaceVertex(random, classes, N, interactor, graph, nodeEntry);
         }
       }
     
