@@ -12,7 +12,7 @@ model HotPotts {
    */
 //  param GlobalDataSource data
 //  param HPSamplerOptions samplerOptions
-  param Integer numGibbsIterations ?: 2000
+  param Integer numGibbsIterations 
   param Plate<String> N
   param Integer numClasses
   param MRFGraph graph

@@ -17,25 +17,25 @@ model IMC {
   
   param Plate<String> P   // [P]atient
   param Plate<String> N   // [N]ode
-  param Plate<String> R   // p[R]otein channel
+//  param Plate<String> R   // p[R]otein channel
 //  param Plate<Integer> C  // patient [C]lass
-  param Plate<Integer> K  // [K]cluster
+//  param Plate<Integer> K  // [K]cluster
 
-  param Integer nGibbsIter ?: 5
+  param Integer nGibbsIter ?: 1000
   param Plated<MRFGraph> graph 
 
-//  random Plated<RealVar> mu
-//  random Plated<RealVar> sigma
+  random Plated<RealVar> mu
+  random Plated<RealVar> sigma
 //  random Plated<IntVar> Z
   random Plated<IntVar> X
-  random Plated<RealVar> Y
+//  random Plated<RealVar> Y
 //  param Plated<MRFInteractor> beta  // TODO: MAKE THIS RANDOM
   param MRFInteractor beta ?: new HPSingle(numClusters)
 
   laws {
       for (Index<String> p : P.indices) {
-          X.slice(p) | beta, N, numClusters, MRFGraph g = graph.get(p)
-                     ~ HotPotts(100, N, numClusters, g, beta)
+          X.slice(p) | beta, N, numClusters, MRFGraph g = graph.get(p), nGibbsIter
+                     ~ HotPotts(nGibbsIter, N, numClusters, g, beta)
       }
     
     // Y.get(p, n, r)

@@ -44,13 +44,20 @@ public class Generators // Warning: blang.distributions.Generators hard-coded in
   
     /** */
     private static void GibbsDiscreteMRFInPlaceVertex
-    (Random random, Plated<IntVar> classes, Plate<String> N, MRFInteractor interactor, MRFGraph graph, Index<String> node)
+    (Random random, Plated<IntVar> classes, Plate<String> N, MRFInteractor interactor, MRFGraph graph, Entry<Query, IntVar> nodeEntry)
     {
       // Accumulate normalization constant and populate in discreteDistribution
       double logSum = Double.NEGATIVE_INFINITY;
       double[] discreteDistribution = new double[interactor.getNumClasses()];
+      String nodeName = null;
+      for (Index<?> index : nodeEntry.getKey().getIndices()) {
+        String plateName = index.getPlate().getName().getString();
+        if (plateName.equalsIgnoreCase("n")) {
+          nodeName = index.getKey().toString();
+        }
+      }
       for (int nodeClass = 0; nodeClass < interactor.getNumClasses(); nodeClass++) {
-        List<String> neighboursOfNode = graph.neighboursMap.get(node.getKey());
+        List<String> neighboursOfNode = graph.neighboursMap.get(nodeName);
         discreteDistribution[nodeClass] = interactor.logNodeClassPotential(StaticUtils.fixedInt(nodeClass), neighboursOfNode, classes, N);
         logSum = NumericalUtils.logAdd(logSum, discreteDistribution[nodeClass]);
       }
@@ -61,8 +68,8 @@ public class Generators // Warning: blang.distributions.Generators hard-coded in
         discreteDistribution[nodeClass] = Math.exp(discreteDistribution[nodeClass]);
       }
       
-
-      ((WritableIntVar) classes.get(node)).set(categorical(random, discreteDistribution));
+      int newVal = categorical(random, discreteDistribution);
+      ((WritableIntVar) classes.get(nodeEntry.getKey())).set(newVal);
     }
   
 //    /** */
@@ -92,8 +99,12 @@ public class Generators // Warning: blang.distributions.Generators hard-coded in
       
       for (int iteration = 0; iteration < numGibbsIterations; iteration++) {
         for (Entry<Query, IntVar> nodeEntry : classes.entries()) {
-          // TODO: 2021-04-30 -> this function below needs access to node in graph via index.
-//          GibbsDiscreteMRFInPlaceVertex(random, classes, N, interactor, graph, nodeEntry);
+          for (Index<?> index : nodeEntry.getKey().getIndices()) {
+            String plateName = index.getPlate().getName().getString();
+            if (plateName.equalsIgnoreCase("n")) {
+              GibbsDiscreteMRFInPlaceVertex(random, classes, N, interactor, graph, nodeEntry);
+            }
+          }
         }
       }
     
