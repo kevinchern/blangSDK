@@ -14,7 +14,7 @@ import blang.mrf.hotpotts.HPSingleSampler;
 
 import briefj.collections.UnorderedPair;
 
-//@Samplers(HPSingleSampler.class)
+@Samplers(HPSingleSampler.class)
 public class HPSingle implements MRFInteractor, RealVar, TidilySerializable {
   
   private double beta = 0.5;
@@ -48,6 +48,9 @@ public class HPSingle implements MRFInteractor, RealVar, TidilySerializable {
 
   @Override
   public double logEdgePotential(IntVar u, IntVar v) {
+    if (u.intValue() < 0 || v.intValue() < 0) {
+      return Double.NEGATIVE_INFINITY;
+    }
     if (u.intValue() >= numClasses || v.intValue() >= numClasses) {
       return Double.NEGATIVE_INFINITY;
     }
