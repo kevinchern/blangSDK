@@ -35,16 +35,16 @@ public class HPSingleSampler implements Sampler {
           Implication 2: will have to sample, say, patient class and beta in one sampler.
    */
   public void execute(Random rand) {
-    for (Index<String> p : P.indices()) {
-      for (Index<String> n : N.indices()) {
-        System.out.print("Patient: ");
-        System.out.println(p.getKey());
-        System.out.print("N: ");
-        System.out.println(n.getKey());
-        System.out.print("X: ");
-        System.out.println(X.get(n, p));
-      }
-    }
+//    for (Index<String> p : P.indices()) {
+//      for (Index<String> n : N.indices()) {
+//        System.out.print("Patient: ");
+//        System.out.println(p.getKey());
+//        System.out.print("N: ");
+//        System.out.println(n.getKey());
+//        System.out.print("X: ");
+//        System.out.println(X.get(n, p));
+//      }
+//    }
 //    // Current beta
 //    double currentLogDensity = logDensity();
 //    double currentBeta = hpSingle.getBeta();

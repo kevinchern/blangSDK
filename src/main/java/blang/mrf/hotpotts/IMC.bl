@@ -13,23 +13,43 @@ model IMC {
    *   Data:            vertices of graph must be consecutive integers from 0 to n-1
    */
   
-  param Integer numClusters ?: 3  // = K.maxSize
   param GlobalDataSource expressionData
   
   param Plate<String> P   // [P]atient
   param Plate<String> N   // [N]ode
+  param Plate<String> R   // p[R]otein channel
+  param Plate<Integer> K   // "[K]"luster
+
+  param Integer numClusters  // = K.maxSize
 
   param Integer nGibbsIter ?: 1000
   param Plated<MRFGraph> graph 
 
   random Plated<IntVar> X
+  random Plated<RealVar> Y
+  random Plated<RealVar> mu
+  random Plated<RealVar> sigma
   param MRFInteractor beta ?: new HPSingle(numClusters)
   param HPSamplerOptions samplerOptions ?: new HPSamplerOptions(P, graph, N, X)
 
   laws {
+      for (Index<Integer> k : K.indices) {
+          mu.get(k) ~ Normal(0, 10)
+          sigma.get(k) ~ Gamma(0.1, 0.1)
+      }
+
       for (Index<String> p : P.indices) {
           X.slice(p) | beta, N, numClusters, MRFGraph g = graph.get(p), nGibbsIter
                      ~ HotPotts(nGibbsIter, N, numClusters, g, beta)
+      }
+
+      for (Index<String> p : P.indices) {
+          for (Index<String> n : N.indices) {
+              for (Index<String> r : R.indices) {
+                  Y.get(p, n, r) | mu, sigma, IntVar xpn = X.get(p, n), K, r
+                    ~ Normal(mu.get(r, K.index(xpn)), pow(sigma.get(r, K.index(xpn)), 2))
+              }
+          }
       }
   }
   
