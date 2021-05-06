@@ -35,7 +35,7 @@ model IMC {
   laws {
       for (Index<Integer> k : K.indices) {
           mu.get(k) ~ Normal(0, 10)
-          sigma.get(k) ~ Gamma(0.1, 0.1)
+          sigma.get(k) ~ Gamma(1, 0.01)
       }
 
       for (Index<String> p : P.indices) {
@@ -44,8 +44,8 @@ model IMC {
       }
 
       for (Index<String> p : P.indices) {
-          for (Index<String> n : N.indices) {
-              for (Index<String> r : R.indices) {
+          for (Index<String> n : N.indices(p)) {
+              for (Index<String> r : R.indices(p, n)) {
                   Y.get(p, n, r) | mu, sigma, IntVar xpn = X.get(p, n), K, r
                     ~ Normal(mu.get(r, K.index(xpn)), pow(sigma.get(r, K.index(xpn)), 2))
               }
