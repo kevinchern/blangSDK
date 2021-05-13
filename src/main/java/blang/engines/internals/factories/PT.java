@@ -258,7 +258,7 @@ public class PT extends ParallelTempering implements PosteriorInferenceEngine
   
   public static enum InitType { COPIES, FORWARD, SCM }
   
-  public static enum LogNormalizationEstimator { thermodynamicIntegration, steppingStone }
+  public static enum LogNormalizationEstimator { thermodynamicIntegration, steppingStone, bridgeSampling }
   
   @Override
   public void setSampledModel(SampledModel model) 
@@ -442,6 +442,8 @@ public class PT extends ParallelTempering implements PosteriorInferenceEngine
     Optional<Double> optionalLogNorm = null;
       if (logNormalizationEstimator == LogNormalizationEstimator.steppingStone)
         optionalLogNorm = steppingStoneEstimator();
+      else if (logNormalizationEstimator == LogNormalizationEstimator.bridgeSampling)
+        optionalLogNorm = bridgeSamplingEstimator();
       else if (logNormalizationEstimator == LogNormalizationEstimator.thermodynamicIntegration)
         optionalLogNorm = thermodynamicEstimator();
       else
