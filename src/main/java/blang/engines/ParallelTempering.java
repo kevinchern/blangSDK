@@ -150,18 +150,21 @@ public class ParallelTempering
     for (int c = 0; c < nChains() - 1; c++) {
       // TODO: start with a smarter value
       double logRatioEstimate = 1;
-      // TODO: threshold should be a parameter
+      // TODO: threshold should be a parameter? 
       double threshold = 0.1;
+      int iterationThreshold = 20;
+      int iterationCount = 0;
       double difference = threshold + 1;
       while (difference > threshold) {
         double newEstimate = estimateRatio(c, logRatioEstimate);
         // TODO: decide whether threshold distance should be in log space
         difference = Math.abs(newEstimate - logRatioEstimate);
-        // TODO: Hacky solution to numeric instability in early rounds.
-        //       Stepping stone estimator runs into same problem, but it just ouptuts some crazy number.
-        if (difference >= 1E90) {
+        // TODO: give a more robust fix
+        //       currently a hacky solution to break loop when numeric instabilities visit in the early rounds :(
+        if (iterationCount > iterationThreshold) {
           difference = 0;
         }
+        iterationCount++;
         logRatioEstimate = newEstimate;
       }
       logNormConstRatioEstimates[c] = logRatioEstimate;
