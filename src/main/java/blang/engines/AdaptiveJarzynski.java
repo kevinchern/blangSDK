@@ -1,5 +1,6 @@
 package blang.engines;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.eclipse.xtext.xbase.lib.Pair;
@@ -47,6 +48,7 @@ public class AdaptiveJarzynski
   
   protected SampledModel prototype;
   protected Random [] parallelRandomStreams;
+  protected ArrayList<Double> [] logWeightsMatrix = (ArrayList<Double>[]) new ArrayList[nParticles]; // TODO: not thread safe
   
   private boolean dropForwardSimulator; // e.g. do not want to drop them when initializing PT
   
@@ -55,6 +57,8 @@ public class AdaptiveJarzynski
    */
   public ParticlePopulation<SampledModel> getApproximation(SampledModel model)
   {
+    for (int particleIndex = 0; particleIndex < nParticles; particleIndex++)
+      logWeightsMatrix[particleIndex] = new ArrayList<Double>();
     Random [] parallelRandomStreams = Random.parallelRandomStreams(random, nParticles);
     return getApproximation(initialize(model, parallelRandomStreams), maxAnnealingParameter, model, parallelRandomStreams, true);
   }
@@ -146,6 +150,7 @@ public class AdaptiveJarzynski
           sampleInitial(random) :
           sampleNext(random, currentPopulation.particles.get(particleIndex), nextTemperature);
       particles[particleIndex] = proposed;
+      logWeightsMatrix[particleIndex].add(logWeights[particleIndex]);
     });
     
     return ParticlePopulation.buildDestructivelyFromLogWeights(
