@@ -97,7 +97,7 @@ public class PT extends ParallelTempering implements PosteriorInferenceEngine
           swapAndRecordStatistics(scanIndex);
         scanIndex++;
       }
-      if (nChains() > 1) { // Note: in last round, this is done only for instrumentation purpose
+      if (nChains() > 1 && adaptFraction > 0.0) { // Note: in last round, this is done only for instrumentation purpose
         reportAcceptanceRatios(round); 
         reportParallelTemperingDiagnostics(round);
         MonotoneCubicSpline cumulativeLambdaEstimate = adapt(round.roundIndex == rounds.size() - 2);
@@ -447,7 +447,7 @@ public class PT extends ParallelTempering implements PosteriorInferenceEngine
       else
         throw new RuntimeException();
       if (optionalLogNorm.isPresent())
-        writer(MonitoringOutput.logNormalizationContantProgress).printAndWrite(
+        writer(MonitoringOutput.logNormalizationConstantProgress).printAndWrite(
           roundReport,
           Pair.of(TidySerializer.VALUE, optionalLogNorm.get())
         );
@@ -479,7 +479,7 @@ public class PT extends ParallelTempering implements PosteriorInferenceEngine
   
   public static enum MonitoringOutput
   {
-    swapIndicators, swapStatistics, annealingParameters, swapSummaries, logNormalizationContantProgress, timeToFirstRestart, 
+    swapIndicators, swapStatistics, annealingParameters, swapSummaries, logNormalizationConstantProgress, timeToFirstRestart, 
     globalLambda, actualTemperedRestarts, asymptoticRoundTripBound, nonAsymptoticRountTrip, roundTimings, lambdaInstantaneous, cumulativeLambda
   }
   

@@ -1,6 +1,6 @@
 plugins {
-  id 'org.xtext.xtend' version '2.0.5'
-  id 'org.xtext.builder' version '2.0.5'
+  id 'org.xtext.xtend' version '2.0.8'
+  id 'org.xtext.builder' version '2.0.8'
   id 'java'
   id 'eclipse'
   id 'maven'
@@ -25,13 +25,14 @@ xtend {
   }
 }
 
-def blangVersion = '4.0.1' // Note to self: not the one that changes often!
+                 // warning: DSL v.4.0.8-4.1.x are broken. TODO: get rid of artifacts!
+def blangVersion = '4.0.7' // Note to self: not the one that changes often!
 
 dependencies {
   xtextLanguages "com.github.UBC-Stat-ML.blangDSL:ca.ubc.stat.blang:${blangVersion}"
-  compile "com.github.UBC-Stat-ML.blangDSL:ca.ubc.stat.blang:${blangVersion}"
-  compile group: 'org.eclipse.xtext', name: 'org.eclipse.xtext.xbase.lib', version: '2.16.0'
-  compile group: 'com.github.UBC-Stat-ML', name: 'inits', version: '3.3.4'
+  compile "com.github.UBC-Stat-ML:blangDSL:${blangVersion}"
+  compile group: 'org.eclipse.xtext', name: 'org.eclipse.xtext.xbase.lib', version: '2.24.0'
+  compile group: 'com.github.UBC-Stat-ML', name: 'inits', version: '3.4.1'
   compile group: 'com.github.UBC-Stat-ML', name: 'bayonet', version: '4.1.11'
   compile group: 'com.github.UBC-Stat-ML', name: 'binc', version: '2.0.5'
   compile group: 'com.github.UBC-Stat-ML', name: 'xlinear', version: '2.3.0'
@@ -124,7 +125,7 @@ uploadArchives {
     mavenDeployer {
       repository(url: "file:///${System.properties['user.home']}/artifacts/")
       snapshotRepository(url: "file:///${System.properties['user.home']}/artifacts/")
-      pom.version = "2.10.3" /* blang-standalone-compiler-directive - do not edit : EXTRACT_VERSION */
+      pom.version = "2.14.0" /* blang-standalone-compiler-directive - do not edit : EXTRACT_VERSION */
       pom.artifactId = "blangSDK"
       pom.groupId = "com.github.UBC-Stat-ML"
     }

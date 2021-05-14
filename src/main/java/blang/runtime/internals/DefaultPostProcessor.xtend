@@ -29,6 +29,7 @@ import static blang.inits.experiments.tabwriters.factories.CSV.*
 import blang.runtime.internals.DefaultPostProcessor.Output
 import blang.runtime.internals.ComputeESS.Batch
 import blang.engines.internals.factories.SCM
+import blang.types.SpikedRealVar
 
 class DefaultPostProcessor extends PostProcessor {
   
@@ -129,6 +130,13 @@ class DefaultPostProcessor extends PostProcessor {
               outputFolder(Output::posteriorPlots)
             )
           }
+          if (isSpikeSlab(type)) {
+            createPlot(
+              new PMFPlot(posteriorSamples, types, this) => [postBurnInExtra = '''data$value <- ifelse(data$value != 0.0, 1.0, 0.0)'''], 
+              outputFolder(Output::posteriorPlots),
+              "-probabilityNonZero"
+            )
+          }
         }
     }
     
@@ -150,7 +158,7 @@ class DefaultPostProcessor extends PostProcessor {
       
     simplePlot(csvFile(monitoringFolder, MonitoringOutput::swapSummaries.toString), Column::round, Column::average)
     
-    for (estimateName : #[MonitoringOutput::globalLambda, MonitoringOutput::logNormalizationContantProgress])
+    for (estimateName : #[MonitoringOutput::globalLambda, MonitoringOutput::logNormalizationConstantProgress])
       simplePlot(csvFile(monitoringFolder, estimateName.toString), Column::round, TidySerializer::VALUE)
       
     simplePlot(new File(outputFolder(Output::ess), SampleOutput::energy + ESS_SUFFIX), Column::chain, TidySerializer::VALUE)
@@ -362,6 +370,10 @@ class DefaultPostProcessor extends PostProcessor {
     return type == Double || RealVar.isAssignableFrom(type)
   }
   
+  def static boolean isSpikeSlab(Class<?> type) {
+    return SpikedRealVar.isAssignableFrom(type)
+  }
+  
   def static boolean isIntValued(Class<?> type) {
     return type == Integer || IntVar.isAssignableFrom(type)
   }
@@ -428,7 +440,10 @@ class DefaultPostProcessor extends PostProcessor {
       p <- ggplot(data, aes(x = «TidySerializer::VALUE»)) +
         geom_density() + «facetString»
         theme_bw() + 
-        geom_segment(data = hdi_df, aes(x=HDI.lower, xend=HDI.upper, y=0, yend=0), col="red") + 
+        geom_segment(inherit.aes = FALSE, data = hdi_df, aes(x=HDI.lower, xend=HDI.upper, y=0, yend=0), col="red") + 
+        geom_point(inherit.aes = FALSE, data = hdi_df, aes(x=HDI.lower, y=0), col="red") + 
+        geom_point(inherit.aes = FALSE, data = hdi_df, aes(x=HDI.upper, y=0), col="red") + 
+        geom_text(inherit.aes = FALSE, data = hdi_df, aes(y= 0, label="«processor.highestDensityIntervalValue»-HDI", x=(HDI.lower + HDI.upper)/2), vjust=-0.5) +
         xlab("«variableName»") +
         ylab("density") +
         ggtitle("Density plot for: «variableName»")
@@ -466,7 +481,7 @@ class DefaultPostProcessor extends PostProcessor {
       val groupBy = facetVariables => [add(TidySerializer::VALUE)]
       return '''
       «removeBurnIn»
-      normalization <-  max(data$«Runner.sampleColumn») - n_samples * «processor.burnInFraction»
+      normalization <-  length(unique(data$«Runner.sampleColumn»))
       data <- data %>%
         group_by(«groupBy.join(",")») %>%
         summarise(
@@ -480,7 +495,10 @@ class DefaultPostProcessor extends PostProcessor {
 
       p <- ggplot(data, aes(x = «TidySerializer::VALUE», y = probability, xend = «TidySerializer::VALUE», yend = rep(0, length(probability)))) +
         geom_point() + geom_segment() + «facetString»
-        geom_segment(data = hdi_df, aes(x=HDI.lower, xend=HDI.upper, y=0, yend=0), col="red") + 
+        geom_segment(inherit.aes = FALSE, data = hdi_df, aes(x=HDI.lower, xend=HDI.upper, y=0, yend=0), col="red") + 
+        geom_point(inherit.aes = FALSE, data = hdi_df, aes(x=HDI.lower, y=0), col="red") + 
+        geom_point(inherit.aes = FALSE, data = hdi_df, aes(x=HDI.upper, y=0), col="red") + 
+        geom_text(inherit.aes = FALSE, data = hdi_df, aes(y=0, label="«processor.highestDensityIntervalValue»-HDI", x=(HDI.lower + HDI.upper)/2), vjust=-0.5) +
         theme_bw() + 
         xlab("«variableName»") +
         ylab("probability") +
@@ -494,6 +512,7 @@ class DefaultPostProcessor extends PostProcessor {
     public val Map<String,Class<?>> types
     public val String variableName
     public val DefaultPostProcessor processor
+    public var String postBurnInExtra = ""
     
     new (File posteriorSamples, Map<String,Class<?>> types, DefaultPostProcessor processor) {
       this.posteriorSamples = posteriorSamples
@@ -507,6 +526,7 @@ class DefaultPostProcessor extends PostProcessor {
       n_samples <- max(data$«Runner.sampleColumn»)
       cut_off <- n_samples * «processor.burnInFraction»
       data <- subset(data, «Runner.sampleColumn» > cut_off)
+      «postBurnInExtra»
       '''
     }
     
@@ -546,9 +566,10 @@ class DefaultPostProcessor extends PostProcessor {
     types.keySet.filter[it != TidySerializer::VALUE && it != Runner::sampleColumn].toList
   }
   
-  def void createPlot(GgPlot plot, File directory) {
-    val scriptFile = new File(directory, "." + plot.variableName + ".r")
-    val imageFile = new File(directory, plot.variableName + "." + imageFormat)
+  def void createPlot(GgPlot plot, File directory) { createPlot(plot, directory, "")}
+  def void createPlot(GgPlot plot, File directory, String suffix) {
+    val scriptFile = new File(directory, "." + plot.variableName + suffix + ".r")
+    val imageFile = new File(directory, plot.variableName + suffix + "." + imageFormat)
     
     callR(scriptFile, '''
       require("ggplot2")
@@ -570,6 +591,14 @@ class DefaultPostProcessor extends PostProcessor {
   
   val static SUMMARY_SUFFIX = "-summary.csv"
   
+  def String removeBurnIn() {
+    return '''
+    n_samples <- max(data$«Runner.sampleColumn»)
+    cut_off <- n_samples * «burnInFraction»
+    data <- subset(data, «Runner.sampleColumn» > cut_off)
+    '''
+  }
+
   def summary(File posteriorSamples, Map<String, Class<?>> types) {
     val directory = outputFolder(Output::summaries)
     val variableName = variableName(posteriorSamples)
@@ -580,6 +609,7 @@ class DefaultPostProcessor extends PostProcessor {
       require("dplyr")
       «highestDensityInterval»
       data <- read.csv("«posteriorSamples.absolutePath»")
+      «removeBurnIn»
       summary <- data %>% «IF !groups.empty» group_by(«groups.join(", ")») %>% «ENDIF» 
         summarise( 
           mean = mean(«TidySerializer::VALUE»),
