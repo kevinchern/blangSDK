@@ -1,6 +1,6 @@
 package blang.validation.internals.fixtures
 
-model NormalCentipede {   
+model NormalSnowman {
   
   param Integer n ?: 2
   random List<RealVar> means ?: latentRealList(n)
