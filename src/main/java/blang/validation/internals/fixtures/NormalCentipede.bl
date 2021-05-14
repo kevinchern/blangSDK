@@ -1,0 +1,18 @@
+package blang.validation.internals.fixtures
+
+model NormalCentipede {   
+  
+  param Integer n ?: 2
+  random List<RealVar> means ?: latentRealList(n)
+  random RealVar observation ?: 1
+  
+  laws {
+      
+      observation | RealVar mu = means.get(0) ~ Normal(mu, 1)
+      
+      for (int i : 0 ..< (n - 1)) {
+          means.get(i) | RealVar mu = means.get(i + 1) ~ Normal(mu, 1)
+      }
+      
+  }
+}

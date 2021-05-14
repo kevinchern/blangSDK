@@ -1,0 +1,14 @@
+package blang.validation.internals.fixtures
+
+model BimodalPosterior {   
+  
+  random RealVar mu ?: latentReal()
+  random RealVar observation ?: 3
+  
+  laws {
+      
+      mu ~ Normal(0, 1)
+      observation | mu ~ Normal(pow(mu, 2), 1)
+      
+  }
+}
