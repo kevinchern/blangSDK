@@ -1,0 +1,20 @@
+package blang.validation.internals.fixtures
+
+model NormalSnowman {
+  
+  param Integer n ?: 7
+  random List<RealVar> means ?: latentRealList(n)
+  random RealVar observation ?: 1
+  
+  laws {
+      
+      observation | RealVar mu = means.get(0) ~ Normal(mu, 1)
+      
+      for (int i : 0 ..< (n - 1)) {
+          means.get(i) | RealVar mu = means.get(i + 1) ~ Normal(mu, 1)
+      }
+
+//      means.get(n - 1) ~ Normal(0, 1)
+      
+  }
+}
