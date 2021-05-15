@@ -158,11 +158,11 @@ public class AdaptiveJarzynski
       }
 
       // Store weights
-      logIncrementalWeightsMatrix.get(particleIndex).add(logWeights[particleIndex]);
+      logWeightsMatrix.get(particleIndex).add(logWeights[particleIndex]);
       if (isInitial) {
-        logWeightsMatrix.get(particleIndex).add(0.0);
+        logIncrementalWeightsMatrix.get(particleIndex).add(0.0);
       } else {
-        logWeightsMatrix.get(particleIndex).add(logDensityRatio);
+        logIncrementalWeightsMatrix.get(particleIndex).add(logDensityRatio);
       }
       // Note: order important since computation is done in place: weight computation should be done first
       SampledModel proposed = isInitial ?
