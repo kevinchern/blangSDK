@@ -1,3 +1,4 @@
+rm(list=ls()); dev.off()
 library("ggplot2")
 theme_set(cowplot::theme_cowplot())
 library("tidyverse")
@@ -37,9 +38,9 @@ plotESS <- ggplot(prop, aes(x=iteration, y=ess)) +
 
 jointPlot <- plot_grid(plotRaw, plotInc, plotNorm, plotESS, nrow = 4)
 
-modelName <- "Ising-32x32"
+modelName <- paste("Mixture[-1 -2 -3 -1 2 3 2 3]", nParticles, sep="-")
 title <- ggdraw() + draw_label(modelName, fontface='bold') +
   theme(plot.margin = margin(0, 0, 0, 7))
 
 finalPlot <- plot_grid(title, jointPlot, ncol=1, rel_heights=c(0.03, 1)); finalPlot
-ggsave(paste("~/projects/blangSDK/viz_scripts", modelName, ".png", sep=""), finalPlot)
+ggsave(paste("~/projects/blangSDK/viz_scripts/", modelName, ".png", sep=""), finalPlot)
