@@ -1,5 +1,6 @@
 package blang.engines;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.eclipse.xtext.xbase.lib.Pair;
@@ -47,6 +48,8 @@ public class AdaptiveJarzynski
   
   protected SampledModel prototype;
   protected Random [] parallelRandomStreams;
+  protected ArrayList<ArrayList<Double>> logIncrementalWeightsMatrix = new ArrayList<ArrayList<Double>>(); // coordinates (particle, iteration)
+  protected ArrayList<ArrayList<Double>> logWeightsMatrix = new ArrayList<ArrayList<Double>>(); // coordinates (particle, iteration)
   
   private boolean dropForwardSimulator; // e.g. do not want to drop them when initializing PT
   
@@ -55,6 +58,10 @@ public class AdaptiveJarzynski
    */
   public ParticlePopulation<SampledModel> getApproximation(SampledModel model)
   {
+    for (int particleIndex = 0; particleIndex < nParticles; particleIndex++) {
+      logWeightsMatrix.add(new ArrayList<Double>());
+      logIncrementalWeightsMatrix.add(new ArrayList<Double>());
+    }
     Random [] parallelRandomStreams = Random.parallelRandomStreams(random, nParticles);
     return getApproximation(initialize(model, parallelRandomStreams), maxAnnealingParameter, model, parallelRandomStreams, true);
   }
@@ -139,8 +146,24 @@ public class AdaptiveJarzynski
     BriefParallel.process(nParticles, nThreads.numberAvailable(), particleIndex ->
     {
       Random random = randoms[particleIndex];
-      logWeights[particleIndex] = 
-        (isInitial ? 0.0 : currentPopulation.particles.get(particleIndex).logDensityRatio(temperature, nextTemperature) + Math.log(currentPopulation.getNormalizedWeight(particleIndex)));
+
+      // compute weights
+      double logDensityRatio = 0;
+      if (isInitial) {
+        logWeights[particleIndex] = 0;
+      }
+      else {
+        logDensityRatio = currentPopulation.particles.get(particleIndex).logDensityRatio(temperature, nextTemperature);
+        logWeights[particleIndex] = logDensityRatio + Math.log(currentPopulation.getNormalizedWeight(particleIndex));
+      }
+
+      // Store weights
+      logIncrementalWeightsMatrix.get(particleIndex).add(logWeights[particleIndex]);
+      if (isInitial) {
+        logWeightsMatrix.get(particleIndex).add(0.0);
+      } else {
+        logWeightsMatrix.get(particleIndex).add(logDensityRatio);
+      }
       // Note: order important since computation is done in place: weight computation should be done first
       SampledModel proposed = isInitial ?
           sampleInitial(random) :
