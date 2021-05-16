@@ -18,7 +18,7 @@ w <- w %>% right_join(prop, by="iteration")
 wInc <- wInc %>% right_join(prop, by="iteration")
 wNorm <- wInc %>% group_by(iteration) %>% mutate(logWeight = logWeight - logSumExp(logWeight))
 wCum <- wInc %>% group_by(particle) %>% mutate(logWeight = cumsum(logWeight))
-prop <- prop %>%
+propTidy <- prop %>%
   gather(statistic, value, c(annealingParameter, ess))
 
 
@@ -41,6 +41,12 @@ plot_monitoring <- function(monitorData, plotTitle, abscissa, minIter, maxIter) 
     guides(colour=F, alpha=F)
 }
 
+plot_monitoring2 <- function(monitorData, plotTitle, abscissa, ordinate) {
+  p <- ggplot(monitorData, aes_string(x=abscissa, y=ordinate)) +
+    geom_line() + ggtitle(plotTitle) + ylim(c(0, 1)) + geom_hline(yintercept=0.5) +
+    guides(colour=F, alpha=F)
+}
+
 plotRaw <- plot_weight(w, "raw", "iteration", minIter, maxIter)
 plotInc <- plot_weight(wInc, "inc", "iteration", minIter, maxIter)
 plotNorm <- plot_weight(wNorm, "norm", "iteration", minIter, maxIter)
@@ -56,17 +62,19 @@ plotIncESS <- plot_weight(wInc, "inc", "ess", 0, 1)
 plotNormESS <- plot_weight(wNorm, "norm", "ess", 0, 1)
 plotCumESS <- plot_weight(wCum, "cum", "ess", 0, 1)
 
-plotMonitor <- plot_monitoring(prop, "ESS/Annealing", "iteration", minIter, maxIter)
+plotMonitor <- plot_monitoring(propTidy, "ESS/Annealing", "iteration", minIter, maxIter)
+plotESSAnn <- plot_monitoring2(prop, "test", "annealingParameter", "ess")
+plotAnnESS <- plot_monitoring2(prop, "test", "ess", "annealingParameter")
 
 
-jointPlot <- plot_grid(plotRaw,  plotRawESS,  plotRawAnn,
-                       plotInc,  plotIncESS,  plotIncAnn,
-                       plotNorm, plotNormESS, plotNormAnn,
-                       plotCum,  plotCumESS,  plotCumAnn,
-                       plotMonitor, plotMonitor, plotMonitor,
-                       nrow=5, ncol=3)
+jointPlot <- plot_grid(plotRaw,     plotRawAnn, # plotRawESS,
+                       plotInc,     plotIncAnn, # plotIncESS,
+                       plotNorm,    plotNormAnn,# plotNormESS,
+                       plotCum,     plotCumAnn, # plotCumESS,
+                       plotMonitor, plotESSAnn, # plotAnnESS,
+                       nrow=5, ncol=2)
 
-modelName <- paste("TBD", nParticles, sep="-")
+modelName <- paste("Ising-5x5-ada-re", nParticles, sep="-")
 title <- ggdraw() + draw_label(modelName, fontface='bold') +
   theme(plot.margin = margin(0, 0, 0, 7))
 
