@@ -5,6 +5,7 @@ library("tidyverse")
 library("cowplot")
 library("matrixStats")
 
+subsetSize <- 18
 setwd("/home/kevinchern/projects/blangSDK/results/latest/")
 w <- read.csv("samples/logWeight.csv")
 wInc <- read.csv("samples/logIncrementalWeight.csv")
@@ -26,9 +27,11 @@ nParticles <- length(levels(w$particle))
 minIter <- 0
 maxIter <- max(w$iteration) 
 
-plot_weight <- function(weightData, plotTitle, abscissa, minIter, maxIter) {
+plot_weight <- function(weightData, plotTitle, abscissa, minIter, maxIter, subsetParticles) {
   abscissa = sym(abscissa)
-  p <- ggplot(weightData %>% filter(!!abscissa >= minIter & !!abscissa <= maxIter), aes_string(x=abscissa, y="logWeight", colour="particle", alpha=.1)) +
+  p <- ggplot(weightData %>%
+                filter(particle %in% subsetParticles) %>%
+                filter(!!abscissa >= minIter & !!abscissa <= maxIter), aes_string(x=abscissa, y="logWeight", colour="particle", alpha=.1)) +
     geom_line() + ggtitle(plotTitle) +
     guides(colour=F, alpha=F)
   return (p)
@@ -47,20 +50,24 @@ plot_monitoring2 <- function(monitorData, plotTitle, abscissa, ordinate) {
     guides(colour=F, alpha=F)
 }
 
-plotRaw <- plot_weight(w, "raw", "iteration", minIter, maxIter)
-plotInc <- plot_weight(wInc, "inc", "iteration", minIter, maxIter)
-plotNorm <- plot_weight(wNorm, "norm", "iteration", minIter, maxIter)
-plotCum <- plot_weight(wCum, "cum", "iteration", minIter, maxIter)
+subsetParticles <- sample(unique(w$particle), subsetSize)
+sortedParticles <- unlist((wCum %>% filter(iteration == maxIter) %>% group_by(particle) %>% arrange(-logWeight))["particle"])
+subsetParticles <- union((union(head(sortedParticles, subsetSize / 3), tail(sortedParticles, subsetSize / 3))), sample(sortedParticles, subsetSize / 3))
 
-plotRawAnn <- plot_weight(w, "raw", "annealingParameter", 0, 1)
-plotIncAnn <- plot_weight(wInc, "inc", "annealingParameter", 0, 1)
-plotNormAnn <- plot_weight(wNorm, "norm", "annealingParameter", 0, 1)
-plotCumAnn <- plot_weight(wCum, "cum", "annealingParameter", 0, 1)
+plotRaw <- plot_weight(w, "raw", "iteration", minIter, maxIter, subsetParticles)
+plotInc <- plot_weight(wInc, "inc", "iteration", minIter, maxIter, subsetParticles)
+plotNorm <- plot_weight(wNorm, "norm", "iteration", minIter, maxIter, subsetParticles)
+plotCum <- plot_weight(wCum, "cum", "iteration", minIter, maxIter, subsetParticles)
 
-plotRawESS <- plot_weight(w, "raw", "ess", 0, 1)
-plotIncESS <- plot_weight(wInc, "inc", "ess", 0, 1)
-plotNormESS <- plot_weight(wNorm, "norm", "ess", 0, 1)
-plotCumESS <- plot_weight(wCum, "cum", "ess", 0, 1)
+plotRawAnn <- plot_weight(w, "raw", "annealingParameter", 0, 1, subsetParticles)
+plotIncAnn <- plot_weight(wInc, "inc", "annealingParameter", 0, 1, subsetParticles)
+plotNormAnn <- plot_weight(wNorm, "norm", "annealingParameter", 0, 1, subsetParticles)
+plotCumAnn <- plot_weight(wCum, "cum", "annealingParameter", 0, 1, subsetParticles)
+
+plotRawESS <- plot_weight(w, "raw", "ess", 0, 1, subsetParticles)
+plotIncESS <- plot_weight(wInc, "inc", "ess", 0, 1, subsetParticles)
+plotNormESS <- plot_weight(wNorm, "norm", "ess", 0, 1, subsetParticles)
+plotCumESS <- plot_weight(wCum, "cum", "ess", 0, 1, subsetParticles)
 
 plotMonitor <- plot_monitoring(propTidy, "ESS/Annealing", "iteration", minIter, maxIter)
 plotESSAnn <- plot_monitoring2(prop, "test", "annealingParameter", "ess")
@@ -68,13 +75,13 @@ plotAnnESS <- plot_monitoring2(prop, "test", "ess", "annealingParameter")
 
 
 jointPlot <- plot_grid(plotRaw,     plotRawAnn, # plotRawESS,
+                       plotCum,     plotCumAnn, # plotCumESS,
                        plotInc,     plotIncAnn, # plotIncESS,
                        plotNorm,    plotNormAnn,# plotNormESS,
-                       plotCum,     plotCumAnn, # plotCumESS,
                        plotMonitor, plotESSAnn, # plotAnnESS,
                        nrow=5, ncol=2)
 
-modelName <- paste("Ising-5x5-ada-re", nParticles, sep="-")
+modelName <- paste("TMP", nParticles, sep="-")
 title <- ggdraw() + draw_label(modelName, fontface='bold') +
   theme(plot.margin = margin(0, 0, 0, 7))
 
