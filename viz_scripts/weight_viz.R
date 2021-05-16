@@ -81,10 +81,12 @@ jointPlot <- plot_grid(plotRaw,     plotRawAnn, # plotRawESS,
                        plotMonitor, plotESSAnn, # plotAnnESS,
                        nrow=5, ncol=2)
 
-modelName <- paste("TMP", nParticles, sep="-")
+modelName <- paste("Ising-5x5", nParticles, "TMP", sep="-")
+
 title <- ggdraw() + draw_label(modelName, fontface='bold') +
   theme(plot.margin = margin(0, 0, 0, 7))
 
 finalPlot <- plot_grid(title, jointPlot, ncol=1, rel_heights=c(0.03, 1)); finalPlot
-ggsave(paste("~/projects/blangSDK/viz_scripts/", modelName, ".png", sep=""), finalPlot)
+save_plot(paste("~/projects/blangSDK/viz_scripts/", modelName, ".pdf", sep=""), finalPlot, 
+       base_height=20, base_width=16, dpi = 150)
 
