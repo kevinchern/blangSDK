@@ -145,30 +145,30 @@ public class ParallelTempering
   
   public Optional<Double> bridgeSamplingEstimator() 
   {
-    double [] logNormConstRatioEstimates = new double[nChains() - 1]; // Z{i} / Z{i+1}, i is closer to posterior than (i + 1)
-    for (int c = 0; c < nChains() - 1; c++) {
-      double logRatioEstimate = 1;
-      double threshold = 1e-3;
-      int iterationThreshold = 30;
-      int iterationCount = 1;
-      double difference = threshold + 1;
-      while (difference >= threshold) {
-        double newEstimate = estimateRatio(c, logRatioEstimate);
-        difference = Math.abs(newEstimate - logRatioEstimate);
-        if (iterationCount == iterationThreshold) {
-          break;
-        }
-        iterationCount++;
-        logRatioEstimate = newEstimate;
-      }
-      logNormConstRatioEstimates[c] = logRatioEstimate;
-    }
+    double threshold = 1e-7;     // Stopping criterion
+    int iterationThreshold = 30; // Stopping criterion
+    double [] logNormConstRatioEstimates = new double[nChains() - 1]; // estimates of Z{i} / Z{i+1}; i is closer to posterior than (i + 1)
+    for (int c = 0; c < nChains() - 1; c++) // arbitrary initial estimates
+      logNormConstRatioEstimates[c] = 1;
 
-    double sum = 0;
-    for (double logRatioEstimate : logNormConstRatioEstimates)
-      sum += logRatioEstimate;
+    int iterationCount = 1;
+    double difference = threshold + 1;
+    double estimate = 0;
+
+    while (difference >= threshold) {
+      for (int c = 0; c < nChains() - 1; c++)
+        logNormConstRatioEstimates[c] = estimateRatio(c, logNormConstRatioEstimates[c]);
+      double newEstimate = 0;
+      for (double logRatioEstimate : logNormConstRatioEstimates)
+        newEstimate += logRatioEstimate;
+      difference = Math.abs(newEstimate - estimate);
+      estimate = newEstimate;
+      if (iterationCount >= iterationThreshold)
+        break;
+      iterationCount++;
+    }
     
-    return Optional.of(sum);
+    return Optional.of(estimate);
   }
 
   private double estimateRatio(int c, double logRatioEstimate) {
