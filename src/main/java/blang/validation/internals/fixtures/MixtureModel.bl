@@ -2,7 +2,7 @@ package blang.examples
 
 model MixtureModel { 
   
-  random  List<RealVar>  observations 
+  random  List<RealVar>  observations       ?: #[-0.2, -0.2, 0.7, 0.4, 0.2]
   random  List<IntVar>   clusterIndicators  ?:  latentIntList(observations.size) 
   random  Simplex        pi                 ?:  latentSimplex(2)
   random  List<RealVar>  means              ?:  latentRealList(2), 
@@ -15,8 +15,8 @@ model MixtureModel {
     
     // priors on each mixture component mean and variance
     for (int mixIdx : 0 ..< means.size) { 
-      means.get(mixIdx)     ~ Normal(0.0, 1.0)
-      variances.get(mixIdx) ~ Gamma(1.0, 1.0)
+      means.get(mixIdx)     ~ Normal(0.0, 10)
+      variances.get(mixIdx) ~ Gamma(0.1, 0.1)
     }
     
     for (int obsIdx : 0 ..< observations.size) {

@@ -5,7 +5,7 @@ library("tidyverse")
 library("cowplot")
 library("matrixStats")
 
-subsetSize <- 18
+subsetSize <- 3 * 30
 setwd("/home/kevinchern/projects/blangSDK/results/latest/")
 w <- read.csv("samples/logWeight.csv")
 wInc <- read.csv("samples/logIncrementalWeight.csv")
@@ -81,7 +81,7 @@ jointPlot <- plot_grid(plotRaw,     plotRawAnn, # plotRawESS,
                        plotMonitor, plotESSAnn, # plotAnnESS,
                        nrow=5, ncol=2)
 
-modelName <- paste("Ising-5x5", nParticles, "TMP", sep="-")
+modelName <- paste("TMP", nParticles, "TMP", sep="-")
 
 title <- ggdraw() + draw_label(modelName, fontface='bold') +
   theme(plot.margin = margin(0, 0, 0, 7))
