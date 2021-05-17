@@ -44,8 +44,8 @@ public class ParallelTempering
   public List<Double> temperingParameters;
   protected Random [] parallelRandomStreams;
   public SummaryStatistics [] energies, swapAcceptPrs;
-  protected ArrayList<ArrayList<Double>> logNumeratorRatios; // used by bridge sampling estimator
-  protected ArrayList<ArrayList<Double>> logDenominatorRatios; // used by bridge sampling estimator
+  protected ArrayList<ArrayList<Double>> logNumeratorRatios;   // Both ratios used by bridge sampling estimator
+  protected ArrayList<ArrayList<Double>> logDenominatorRatios; // Dimensions: (nChains, nScans)
   protected LogSumAccumulator [] logSumLikelihoodRatios; // used by Stepping stone marginalization
   protected int swapIndex = 0;
   protected boolean [] swapIndicators;
@@ -145,24 +145,18 @@ public class ParallelTempering
   
   public Optional<Double> bridgeSamplingEstimator() 
   {
-    // TODO: Z-posterior threshold or individual ratio threshold?
     double [] logNormConstRatioEstimates = new double[nChains() - 1]; // Z{i} / Z{i+1}, i is closer to posterior than (i + 1)
     for (int c = 0; c < nChains() - 1; c++) {
-      // TODO: start with a smarter value
       double logRatioEstimate = 1;
-      // TODO: threshold should be a parameter? 
-      double threshold = 0.1;
-      int iterationThreshold = 20;
-      int iterationCount = 0;
+      double threshold = 1e-3;
+      int iterationThreshold = 30;
+      int iterationCount = 1;
       double difference = threshold + 1;
-      while (difference > threshold) {
+      while (difference >= threshold) {
         double newEstimate = estimateRatio(c, logRatioEstimate);
-        // TODO: decide whether threshold distance should be in log space
         difference = Math.abs(newEstimate - logRatioEstimate);
-        // TODO: give a more robust fix
-        //       currently a hacky solution to break loop when numeric instabilities visit in the early rounds :(
-        if (iterationCount > iterationThreshold) {
-          difference = 0;
+        if (iterationCount == iterationThreshold) {
+          break;
         }
         iterationCount++;
         logRatioEstimate = newEstimate;
