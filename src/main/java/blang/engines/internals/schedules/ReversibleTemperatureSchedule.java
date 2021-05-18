@@ -16,8 +16,8 @@ public class ReversibleTemperatureSchedule implements TemperatureSchedule
   {
     if (nTemperatures < 1)
       throw new RuntimeException("Number of temperatures should be positive: " + nTemperatures);
-    double k = 4;
-    double freq = 2;
+    double k = 2.0;
+    double freq = 0;
     double time = iteration / (double) nTemperatures;
     double t = Math.pow(time, k);
     double result = t / 3.0 * (Math.sin(t * freq * 2.0 * Math.PI + Math.PI / 2.0) + 2.0);

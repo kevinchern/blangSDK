@@ -90,3 +90,14 @@ finalPlot <- plot_grid(title, jointPlot, ncol=1, rel_heights=c(0.03, 1)); finalP
 save_plot(paste("~/projects/blangSDK/viz_scripts/", modelName, ".pdf", sep=""), finalPlot, 
        base_height=20, base_width=16, dpi = 150)
 
+logESS <- function(weights) {
+  logess <- logSumExp(weights) * 2  - logSumExp(weights * 2) - log(length(weights))
+  ess <- exp(logess)
+  return (ess)
+}
+
+sortedPs <- wCum %>% filter(iteration == max(wCum$iteration)) %>% arrange(logWeight)
+logESS(sortedPs$logWeight[1:10000])
+logESS(sortedPs$logWeight[2000:8000])
+library("gganimate")
+gifplot <- ggplot(wCum, aes(x=logWeight)) + geom_histogram(bins=200) + transition_manual(iteration); animate(gifplot)
