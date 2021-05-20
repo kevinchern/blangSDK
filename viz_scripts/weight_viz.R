@@ -67,7 +67,7 @@ plotCum <- plot_weight(wCum, "cum", "iteration", minIter, maxIter, subsetParticl
 plotRawAnn <- plot_weight(w, "raw", "annealingParameter", 0, 1, subsetParticles)
 plotIncAnn <- plot_weight(wInc, "inc", "annealingParameter", 0, 1, subsetParticles)
 plotNormAnn <- plot_weight(wNorm, "norm", "annealingParameter", 0, 1, subsetParticles)
-plotCumAnn <- plot_weight(wCum, "cum", "annealingParameter", 0, 1, subsetParticles)
+plotCumAnn <- plot_weight(wCum, "cum", "annealingParameter", 0, 1, subsetParticles) + stat_summary(geom = "line", fun = logRunningMean, colour="black", size=1, alpha=1.0)
 
 plotRawESS <- plot_weight(w, "raw", "ess", 0, 1, subsetParticles)
 plotIncESS <- plot_weight(wInc, "inc", "ess", 0, 1, subsetParticles)
@@ -81,10 +81,10 @@ plotAnnESS <- plot_monitoring2(prop, "test", "ess", "annealingParameter")
 
 jointPlot <- plot_grid(plotRaw,     plotRawAnn, # plotRawESS,
                        plotCum,     plotCumAnn, # plotCumESS,
-                       #plotInc,     plotIncAnn, # plotIncESS,
-                       #plotNorm,    plotNormAnn,# plotNormESS,
+                       plotInc,     plotIncAnn, # plotIncESS,
+                       plotNorm,    plotNormAnn,# plotNormESS,
                        plotMonitor, plotESSAnn, # plotAnnESS,
-                       nrow=3, ncol=2)
+                       ncol=2)
 
 modelName <- paste("TMP", nParticles, "TMP", sep="-")
 
@@ -108,21 +108,36 @@ save_plot(paste("~/projects/blangSDK/viz_scripts/", modelName, ".pdf", sep=""), 
 #gifplot <- ggplot(wCum, aes(x=logWeight)) + geom_histogram(bins=200) + transition_manual(iteration); animate(gifplot)
 
 observedTrajectory <- wCum %>%
-  group_by(iteration) %>%
+  group_by(annealingParameter) %>%
   summarise(logRunningMean = logRunningMean(logWeight))
 
 trainingTrajectory <- observedTrajectory %>% 
-  filter(iteration <= 0.3 * maxIter) 
+  filter(annealingParameter <= 0.25) 
 
-quadraticFit <- lm(logRunningMean ~ poly(iteration, 2, raw=TRUE), trainingTrajectory)
+ap <- seq(0, 1, by=0.01)
 splineFit <- smooth.spline(trainingTrajectory)
-fittedQuadraticTrajectory <- data.frame(iteration=1:maxIter, logRunningMean=predict(quadraticFit, data.frame(iteration=1:maxIter)))
-fittedSplineTrajectory <- data.frame(predict(splineFit, 1:maxIter)); colnames(fittedSplineTrajectory) <- c("iteration", "logRunningMean")
+fittedSplineTrajectory <- data.frame(predict(splineFit, ap)); colnames(fittedSplineTrajectory) <- c("annealingParameter", "logRunningMean")
+lmFit <- lm(logRunningMean ~ poly(annealingParameter, 2) + exp(annealingParameter), trainingTrajectory)
+fittedPolyTrajectory <- data.frame(annealingParameter=ap, logRunningMean=predict(lmFit, data.frame(annealingParameter=ap)))
 
+print(observedTrajectory$logRunningMean[maxIter+1])
+print(predict(splineFit, data.frame(annealingParameter=1))$y)
+print(fittedPolyTrajectory$logRunningMean[length(ap)])
 ggplot() +
-  geom_line(data=observedTrajectory, aes(x=iteration, y=logRunningMean, colour="ObservedTrajectory")) +
-  geom_line(data=fittedSplineTrajectory,    aes(x=iteration, y=logRunningMean, colour="FittedSplineTrajectory"))
-  # geom_line(data=fittedQuadraticTrajectory, aes(x=iteration, y=logRunningMean, colour="FittedQuadraticTrajectory"))
+  geom_line(data=observedTrajectory,     aes(x=annealingParameter, y=logRunningMean, colour="ObservedTrajectory")) +
+  geom_line(data=fittedSplineTrajectory, aes(x=annealingParameter, y=logRunningMean, colour="FittedSplineTrajectory")) + 
+  geom_line(data=fittedPolyTrajectory,   aes(x=annealingParameter, y=logRunningMean, colour="FittedPolyTrajectory")) 
+
+plotCumAnn +
+  stat_summary(data=fittedSplineTrajectory, fun = identity, aes(x=annealingParameter, y=logRunningMean), colour="red", alpha=1.0, geom='line') +
+  stat_summary(data=fittedPolyTrajectory, fun = identity, aes(x=annealingParameter, y=logRunningMean), colour="red", alpha=1.0, geom='line')
+
+sfn <- splinefun(trainingTrajectory$annealingParameter, trainingTrajectory$logRunningMean, method = "fmm")
+ggplot() +
+  geom_line(data=observedTrajectory, aes(x=annealingParameter, y=logRunningMean, colour="ObservedTrajectory")) +
+  geom_line(data=data.frame(annealingParameter=ap, logRunningMean=sfn(ap)), aes(x=annealingParameter, y=logRunningMean, colour="FittedSplineTrajectory")) 
+
+
 
 
 ################################
