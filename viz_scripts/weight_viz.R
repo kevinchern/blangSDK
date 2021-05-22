@@ -5,7 +5,7 @@ library("tidyverse")
 library("cowplot")
 library("matrixStats")
 
-subsetSize <- 3 * 333
+subsetSize <- 3 * 33
 setwd("/home/kevinchern/projects/blangSDK/results/latest/")
 w <- read.csv("samples/logWeight.csv")
 wInc <- read.csv("samples/logIncrementalWeight.csv")
