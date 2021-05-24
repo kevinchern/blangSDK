@@ -9,7 +9,7 @@ public class SCurveTemperatureSchedule implements TemperatureSchedule
 {
   @Arg        @DefaultValue("100")
   public int nTemperatures = 100;
-  public static int iteration = 0;
+  public static int iteration = 1;
 
   @Arg @DefaultValue("1.5")
   public double   d = 1.5;
