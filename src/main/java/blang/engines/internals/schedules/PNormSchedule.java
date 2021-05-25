@@ -26,6 +26,9 @@ public class PNormSchedule implements TemperatureSchedule
     if (nTemperatures < 1)
       throw new RuntimeException("Number of temperatures should be positive: " + nTemperatures);
     double time = iteration / (double) nTemperatures;
+    if (d == 0) {
+      return time;
+    }
     double twoToD = Math.pow(2, d);
     double factorOne = 1.0 / (twoToD - 1.0); 
     double factorTwo = twoToD / ((twoToD - 1) * (1 - time) + 1) - 1;
