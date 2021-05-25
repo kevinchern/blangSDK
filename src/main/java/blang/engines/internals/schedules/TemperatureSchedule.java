@@ -9,6 +9,7 @@ import blang.runtime.SampledModel;
   ReversibleTemperatureSchedule.class,
   ReversibleAdaptiveTemperatureSchedule.class,
   SCurveTemperatureSchedule.class,
+  PNormSchedule.class,
   PolyCurveTemperatureSchedule.class})
 public interface TemperatureSchedule
 {
