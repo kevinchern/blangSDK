@@ -28,6 +28,14 @@ public class AdaptiveJarzynski
       + "perform a resampling round.")
                           @DefaultValue("0.5")
   public double resamplingESSThreshold = 0.5;
+
+  @Arg(description = "Whether to vary resampling ESS threshold over time.")
+                          @DefaultValue("false")
+  public boolean adaptiveESSThreshold = false;
+
+  @Arg(description = "Whether to increase or decrease resampling ESS threshold over time.")
+                          @DefaultValue("true")
+  public boolean increaseESSThreshold = true;
   
   @Arg(description = "Algorithm selecting annealing parameter increments.")
                                         @DefaultValue("AdaptiveTemperatureSchedule")
@@ -96,6 +104,13 @@ public class AdaptiveJarzynski
       recordPropagationStatistics(iter, temperature, population.getRelativeESS());
       if (resamplingNeeded(population, nextTemperature))
       { 
+        if (adaptiveESSThreshold) {
+          if (increaseESSThreshold) {
+            resamplingESSThreshold += (1.0 - resamplingESSThreshold) / 2.0;
+          } else {
+            resamplingESSThreshold -= resamplingESSThreshold / 2.0;
+          }
+        }
         population = resample(random, population);
         recordResamplingStatistics(iter, nextTemperature, population.logNormEstimate());
         
